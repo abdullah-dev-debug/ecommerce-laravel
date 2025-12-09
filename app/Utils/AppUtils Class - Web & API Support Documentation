@@ -1,0 +1,108 @@
+AppUtils Class - Web & API Support Documentation
+Overview
+A utility class that provides consistent response handling for both Web and API requests in Laravel applications.
+
+Core Features
+1. Dual Response Support
+API Responses: Returns JSON responses with proper status codes
+
+Web Responses: Returns redirects with flash messages for web views
+
+2. Response Methods
+apiResponse()
+Primary method for API JSON responses
+
+Supports custom status keys, main message keys, and additional data
+
+ResponseApi()
+Simplified wrapper for apiResponse()
+
+Default parameters for common use cases
+
+ErrorResponse()
+Handles both API and Web error responses
+
+API: Returns JSON error with status code
+
+Web: Redirects back with error flash message
+
+SuccessResponse() (Newly Added)
+Handles both API and Web success responses
+
+API: Returns JSON success with data
+
+Web: Redirects back with success flash message
+
+3. Validation Helpers
+checkDuplicateEmail()
+Checks email uniqueness across models
+
+Returns appropriate response based on request type
+
+validateLoginCredentials()
+Validates user credentials
+
+Handles both "user not found" and "invalid password" scenarios
+
+getUserByEmail()
+Helper to fetch user by email from any model
+
+4. Utility Methods
+nullCheck()
+Throws custom exception if item is null
+
+Useful for model finding operations
+
+notFoundResponse()
+Standardized 404 response formatter
+
+mergeIfNotExists()
+Safely merges arrays without overwriting existing keys
+
+Response Flow
+For API Requests ($useApi = true)
+text
+→ Returns JsonResponse
+→ Consistent JSON structure
+→ HTTP status codes
+→ Frontend can parse easily
+For Web Requests ($useApi = false)
+text
+→ Returns RedirectResponse
+→ Flash messages to session
+→ Redirects back/forward
+→ Blade views display messages
+Usage Patterns
+In API Controllers
+php
+return AppUtils::SuccessResponse('Created', 201, true, $data);
+return AppUtils::ErrorResponse('Not found', 404, true);
+In Web Controllers
+php
+return AppUtils::SuccessResponse('Created', 201, false);
+return AppUtils::ErrorResponse('Error occurred', 500, false);
+Benefits
+Consistency: Uniform response format across application
+
+Maintainability: Single source of truth for response logic
+
+Flexibility: Easy to switch between API and Web responses
+
+Type Safety: Proper return type hints for better IDE support
+
+Error Handling: Comprehensive exception and error management
+
+Integration
+Works seamlessly with:
+
+Laravel Controllers
+
+Middleware
+
+Exception Handlers
+
+Frontend frameworks (Vue.js, React, etc.)
+
+Blade templates
+
+This utility eliminates response handling duplication and ensures consistent user experience across both API and Web interfaces.
