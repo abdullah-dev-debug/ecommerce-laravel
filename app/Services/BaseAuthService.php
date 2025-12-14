@@ -67,8 +67,17 @@ class BaseAuthService
     }
 
     /**
-     * Login user/admin
+     * Login user/admin/etc
      */
+
+    private function trackIp($user)
+    {
+        $currentIp = request()->ip();
+
+        if ($user->ip !== $currentIp) {
+            $user->update(['ip' => $currentIp]);
+        }
+    }
 
     public function login(array $data = [], ?string $authKey = null, bool $useApi = false, ?string $tokenName = null)
     {
@@ -82,6 +91,7 @@ class BaseAuthService
         if ($useApi && $authKey === null) {
             $token = $user->createToken($tokenName ?? 'api_token')->plainTextToken;
         } else {
+            $this->trackIp($user);
             Auth::guard($authKey)->login($user);
             request()->session()->regenerate();
         }

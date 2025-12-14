@@ -6,8 +6,11 @@ use App\Utils\AppUtils;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class BaseService
 {
@@ -29,35 +32,38 @@ class BaseService
             Cache::forget($cacheKey);
         }
     }
-    public function create(array $data, ?string $cacheKey = null): Model | null
+    private function ensureCheckNull(
+        $item,
+        $key = 'error',
+        $useApi = false,
+        $statusCode = 404
+    ): JsonResponse|RedirectResponse|null {
+        if (empty($item)) {
+            if ($useApi) {
+                return response()->json([$key => $this->notFoundMessage], $statusCode);
+            }
+            return redirect()->back()->with([$key => $this->notFoundMessage]);
+        }
+        return null;
+    }
+
+    public function create(array $data, ?string $cacheKey = null): Model|null
     {
         $this->ensureCachekey($cacheKey);
         return $this->model->create($data);
     }
-    public function update(array $data, int $id, string|null $cacheKey = null, array $filePaths = []): Model | null
+    public function update(array $data, int $id, string|null $cacheKey = null, array $filePaths = [])
     {
         $this->ensureCachekey($cacheKey);
         $currentItem = $this->model->find($id);
+
+        $this->ensureCheckNull($currentItem);
 
         if ($filePaths) {
             DeleteFiles($filePaths);
         }
 
-        // Log::info("BEFORE UPDATE - Current data:", $currentItem->toArray());
-        // Log::info("BEFORE UPDATE - New data:", $data);
-
         $currentItem->update($data);
-
-        // if (!$result) {
-        //     Log::warning("UPDATE returned false - No actual change detected", [
-        //         'id' => $id,
-        //         'newData' => $data,
-        //         'existingData' => $currentItem->toArray()
-        //     ]);
-        // } else {
-        //     Log::info("UPDATE succeeded");
-        // }
-
         return $currentItem->refresh();
     }
 
@@ -65,6 +71,7 @@ class BaseService
     {
         $this->ensureCachekey($cacheKey);
         $currentItem = $this->model->find($id);
+        $this->ensureCheckNull($currentItem);
         if ($filePath) {
             DeleteFile($filePath);
         }
@@ -79,7 +86,7 @@ class BaseService
         ?string $cacheKey = null,
         $cacheTimer = 60
     ): Collection {
-        $query =  $this->model->with($relation)->where($statusColumn, self::STATUS_ACTIVE);
+        $query = $this->model->with($relation)->where($statusColumn, self::STATUS_ACTIVE);
         if ($usePagination) {
             $result = $query->paginate($perPage);
         } else {
@@ -156,7 +163,7 @@ class BaseService
 
     public function getSingleItem(int $id, array $relation = [], string $pageKey = "item"): Model
     {
-        $currentItem =  $this->model->with($relation)->find($id);
+        $currentItem = $this->model->with($relation)->find($id);
         if (!$currentItem) {
             throw new ModelNotFoundException($pageKey . " not found.");
         }
@@ -196,4 +203,6 @@ class BaseService
             'is_active' => $newStatus
         ];
     }
+
+
 }

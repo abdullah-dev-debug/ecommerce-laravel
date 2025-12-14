@@ -196,8 +196,6 @@ abstract class Controller
         }
     }
 
-
-
     public function successRedirect(string $message): RedirectResponse
     {
         return $this->appUtils->webSuccessRedirect($message);

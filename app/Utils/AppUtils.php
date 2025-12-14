@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 class AppUtils
 {
     // ==================== API RESPONSE METHODS ====================
-    
+
     public static function apiResponse(
         string $mainKey,
         string $message,
@@ -106,6 +106,8 @@ class AppUtils
         return null;
     }
 
+
+
     // ==================== DATA METHODS ====================
 
     public static function getUserByEmail($modelClass, $validatedData)
@@ -118,7 +120,7 @@ class AppUtils
         return !$item ? throw new MyCustomException($message, 404) : $item;
     }
 
-  
+
     // ==================== UNIVERSAL METHODS (Backward Compatibility) ====================
 
     /**
@@ -139,11 +141,21 @@ class AppUtils
         if ($useApi) {
             return static::apiError($message, $statusCode ?? 400);
         }
-        
+
         if ($useRedirect) {
             return static::webErrorRedirect($message);
         }
-        
+
         return static::webErrorView($view, $data, $message);
     }
+
+    public static function merge_items(array ...$arrays): array
+    {
+        $merged = [];
+        foreach ($arrays as $array) {
+            $merged = [...$merged, ...$array];
+        }
+        return $merged;
+    }
+
 }

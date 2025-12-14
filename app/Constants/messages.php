@@ -15,15 +15,21 @@ class Messages
     public const MSG_ENABLED_SUCCESS  = "has been enabled successfully";
     public const MSG_DISABLED_SUCCESS  = "has been disabled successfully";
 
+    public const MSG_REG_SUCCESS = "Registration successful. Please log in.";
+    public const MSG_LOGIN_SUCCESS = "Login Successfully!";
+    public const MSG_LOGOUT_SUCCESS = "Logout Successfully!";
+
+
+
     /*  
     * Log Constant Messages is given
     */
 
-    public const LOG_MSG_STORE = "@store Controller"; 
-    public const LOG_MSG_INDEX = "@index Controller"; 
-    public const LOG_MSG_DELETE = "@destroy Controller"; 
-    public const LOG_MSG_UPDATE = "@update Controller"; 
-    public const LOG_MSG_EDIT = "@show Controller"; 
-    public const LOG_MSG_ALL = "@all Controller"; 
-    public const LOG_MSG_IS_ACTIVE = "@toggleStatus Controller"; 
+    public const LOG_MSG_STORE = "@store Controller";
+    public const LOG_MSG_INDEX = "@index Controller";
+    public const LOG_MSG_DELETE = "@destroy Controller";
+    public const LOG_MSG_UPDATE = "@update Controller";
+    public const LOG_MSG_EDIT = "@show Controller";
+    public const LOG_MSG_ALL = "@all Controller";
+    public const LOG_MSG_IS_ACTIVE = "@toggleStatus Controller";
 }

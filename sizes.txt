@@ -1,0 +1,17 @@
+Frontend Image Size Backend Frontend Width and height optimize
+
+Country Flag Icon 
+Backend Flag Image Size 48 x 32
+width 48px height 32px
+
+category & SubCategory Icon 
+backend Image Size  128 x 128
+width 64px height 64px
+
+Product Thumbnail
+Backend Image Size 600 x 600
+width 300 height 300
+
+Product Gallery
+Backend gallery image size 1200 x 1200
+Frontend gallery image 300 x 300

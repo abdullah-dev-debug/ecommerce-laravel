@@ -5,17 +5,49 @@ use App\Utils\ErrorUtils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-function UploadFile($request, string $fileKey, string $parentFolder, string $childFolder, $file)
-{
-    if ($request->hasFile($fileKey) && $request->file($fileKey)->isValid()) {
-        $directory = public_path("assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''));
-        if (!File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true);
+use Spatie\Image\Image;
+use Spatie\Image\Manipulations;
+
+
+function UploadFile(
+    string $parentFolder,
+    string $childFolder,
+    string $fileKey,
+    int $width,
+    int $height
+): ?string {
+    if (request()->hasFile($fileKey)) {
+        $file = request()->file($fileKey);
+
+        if ($file && $file->isValid()) {
+
+            $directory = public_path("assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''));
+
+            if (!File::exists($directory)) {
+                File::makeDirectory($directory, 0755, true);
+            }
+
+            $filename = Str::uuid() . '.webp';
+            $filePath = "$directory/$filename";
+
+            $file->move($directory, 'temp_' . $filename);
+
+            Image::load("$directory/temp_$filename")
+                ->resize($width, $height, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                })
+                ->format(Manipulations::FORMAT_WEBP)
+                ->quality(80)
+                ->optimize()
+                ->save($filePath);
+
+            File::delete("$directory/temp_$filename");
+            return rtrim("/assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''), '/') . "/$filename";
         }
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move($directory, $filename);
-        return rtrim("/assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''), '/') . "/$filename";
     }
+
+    return null;
 }
 
 
@@ -71,8 +103,14 @@ function UploadVideo(
     }
 }
 
-function UploadFiles(string $parentFolder, ?string $childFolder, array $files = []): array|JsonResponse
-{
+
+function UploadFiles(
+    string $parentFolder,
+    ?string $childFolder,
+    array $files = [],
+    int $width = 1200,
+    int $height = 1200
+): array|JsonResponse {
     $uploadedPaths = [];
 
     try {
@@ -88,15 +126,38 @@ function UploadFiles(string $parentFolder, ?string $childFolder, array $files = 
 
         foreach ($files as $file) {
             if ($file && $file->isValid()) {
-                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                $file->move($directory, $filename);
-                $uploadedPaths[] = "/assets/$parentFolder" . ($childFolder ? "/$childFolder" : '') . "/$filename";
+
+                // force webp
+                $filename = Str::uuid() . '.webp';
+                $tempName = 'temp_' . $filename;
+
+                // move temp file
+                $file->move($directory, $tempName);
+
+                Image::load("$directory/$tempName")
+                    ->resize($width, $height, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    })
+                    ->format(Manipulations::FORMAT_WEBP)
+                    ->quality(80)
+                    ->optimize()
+                    ->save("$directory/$filename");
+
+                // delete temp file
+                File::delete("$directory/$tempName");
+
+                $uploadedPaths[] =
+                    "/assets/$parentFolder" .
+                    ($childFolder ? "/$childFolder" : '') .
+                    "/$filename";
             }
         }
 
         return $uploadedPaths;
+
     } catch (\Throwable $th) {
-        return ErrorUtils::handle($th, "Helper @DeleteFile");
+        return ErrorUtils::handle($th, "Helper @UploadFiles");
     }
 }
 function DeleteFile($filePath)
@@ -107,7 +168,7 @@ function DeleteFile($filePath)
             return File::delete($fullpath);
         }
         if (!File::exists($fullpath)) {
-            return AppUtils::notFoundResponse('error', 'File Not Found!', 404);
+            return AppUtils::webErrorRedirect('File Not Found!');
         }
         return AppUtils::apiResponse('error', 'Failed to delete the file', 500);
     } catch (\Throwable $th) {
@@ -145,7 +206,7 @@ function DeleteFiles(array $files)
         }
 
         if (empty($deletedFiles)) {
-            return AppUtils::notFoundResponse('error', 'Files not found.', 404);
+            return AppUtils::webErrorRedirect('File Not Found!');
         }
     } catch (\Throwable $th) {
         return ErrorUtils::handle($th, "Files deletion error");
