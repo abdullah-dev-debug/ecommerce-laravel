@@ -20,10 +20,17 @@ class BrandController extends Controller
     public const MSG_LIST_SUCCESS = self::PAGE_KEY . Messages::MSG_LIST_SUCCESS;
     public const MSG_ENABLED_SUCCESS = self::PAGE_KEY . Messages::MSG_ENABLED_SUCCESS;
     public const MSG_DISABLED_SUCCESS = self::PAGE_KEY . Messages::MSG_DISABLED_SUCCESS;
-    public const VIEW_NAMESPACE = "admin.brand.";
+    public const VIEW_NAMESPACE = "catalog.brand.";
     public function __construct(AppUtils $appUtils)
     {
         return parent::__construct($appUtils, new Brand());
+    }
+
+    public function create () {
+        return parent::executeWithTryCatch(function () {
+            $view = $this->returnCreateView();
+            return $this->successView($view);
+        });
     }
 
     public function store(BrandAssetsRequest $request): RedirectResponse
@@ -58,9 +65,10 @@ class BrandController extends Controller
 
     public function edit(int|string $brand)
     {
-        return parent::executeWithTryCatch(function () use ($brand): JsonResponse {
+        return parent::executeWithTryCatch(function () use ($brand): View {
+            $view = $this->returnEditView();
             $data = $this->findOrRedirect($brand);
-            return $this->apiSuccessResponse(self::MSG_LIST_SUCCESS, ["brand" => $data]);
+            return $this->successView($view, ["brand" => $data]);
         });
     }
 
@@ -74,6 +82,17 @@ class BrandController extends Controller
 
     private function returnListView(): string
     {
-        return self::VIEW_NAMESPACE . '.index';
+        $role = $this->getcurrentRole();
+        return $role . self::VIEW_NAMESPACE . 'index';
+    }
+    private function returnCreateView(): string
+    {
+        $role = $this->getcurrentRole();
+        return $role . self::VIEW_NAMESPACE . 'create';
+    }
+    private function returnEditView(): string
+    {
+        $role = $this->getcurrentRole();
+        return $role . self::VIEW_NAMESPACE . 'edit';
     }
 }

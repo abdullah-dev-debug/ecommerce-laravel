@@ -34,8 +34,9 @@ class AdminRequest extends FormRequest
             "name" => "required|min:4",
             "email" => "required|unique:admins,email",
             "password" => "required|min:8",
-            "ip" => "nullable|ip",
-            "status" => "nullable",
+            "phone" => "nullable",
+            "address" => "nullable",
+            "ip" => "nullable|ip"
 
         ];
     }

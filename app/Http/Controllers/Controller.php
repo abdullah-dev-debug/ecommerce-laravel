@@ -12,6 +12,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 abstract class Controller
@@ -225,16 +226,25 @@ abstract class Controller
         return $this->appUtils->apiSuccess($message, $data);
     }
 
-    public function handleOperation(callable $operation, string $successMessage): RedirectResponse
-    {
+    public function handleOperation(
+        callable $operation,
+        string $successMessage,
+        $redirectBack = true,
+        string $route = 'index',
+
+    ): RedirectResponse|View {
         DB::beginTransaction();
         try {
             $operation();
             DB::commit();
-            return $this->successRedirect($successMessage);
+            if ($redirectBack) {
+                return $this->successRedirect($successMessage);
+            }
+            return redirect()->route($route)->with('success', $successMessage);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->throwError($th);
+            throw $th;
+            // return $this->throwError($th);
         }
     }
 
@@ -250,5 +260,18 @@ abstract class Controller
     {
         $error = $this->handleError($th, $message);
         return $this->errorRedirect($error['error']);
+    }
+
+    public function getcurrentRole(): string
+    {
+        $role = "customer.";
+        if (Auth::guard('admin')->check()) {
+            $role = "admin.";
+        }
+
+        if (Auth::guard('vendor')->check()) {
+            $role = "vendor.";
+        }
+        return $role;
     }
 }

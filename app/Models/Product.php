@@ -65,13 +65,9 @@ class Product extends BaseModel
     {
         return $this->belongsTo(Brand::class, 'brand_id');
     }
-    public function color(): BelongsTo
+    public function variants(): HasMany
     {
-        return $this->belongsTo(Color::class, 'color_id');
-    }
-    public function size(): BelongsTo
-    {
-        return $this->belongsTo(Sizes::class, 'size_id');
+        return $this->hasMany(ProductVariants::class, 'product_id');
     }
     public function unit(): BelongsTo
     {
@@ -81,10 +77,7 @@ class Product extends BaseModel
     {
         return $this->hasMany(Gallery::class, 'product_id');
     }
-    public function variants(): HasMany
-    {
-        return $this->hasMany(ProductVariants::class, 'product_id');
-    }
+
 
     public function reviews(): HasMany
     {

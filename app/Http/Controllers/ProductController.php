@@ -4,11 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Constants\Messages;
 use App\Http\Requests\ProductRequest;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Color;
 use App\Models\Gallery;
 use App\Models\Product;
+use App\Models\ProductVariants;
+use App\Models\Sizes;
+use App\Models\SubCategory;
+use App\Models\Unit;
 use App\Utils\AppUtils;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Str;
 
 class ProductController extends Controller
 {
@@ -24,17 +32,28 @@ class ProductController extends Controller
     public const GALLERY_FOLDER = "gallery";
     public const THUMBNAIL_KEY = "thumbnail";
     public const GALLERY_KEY = "gallery_photos";
-    public const VIEW_NAMESPACE = "products.";
-    protected $gallery;
-    public function __construct(AppUtils $appUtils, Gallery $gallery)
-    {
+    public const VIEW_NAMESPACE = "product.";
+    protected $gallery, $variantModel, $colors, $sizes, $units, $brands, $categories, $subCategories;
+    public function __construct(
+        AppUtils $appUtils,
+        Gallery $gallery,
+        ProductVariants $productVariants,
+        Color $colors,
+        Sizes $sizes,
+        Category $categories,
+        SubCategory $subCategories,
+        Brand $brands,
+        Unit $units
+    ) {
         $this->gallery = $gallery;
-        return parent::__construct($appUtils, new Product());
-    }
-
-    private function getcurrentRole(): string
-    {
-        return auth()->user()->role == 1 ? 'admin.' : auth()->user()->role == 2 ? 'vendor.' : 'customer.';
+        parent::__construct($appUtils, new Product());
+        $this->variantModel = $productVariants;
+        $this->colors = $colors;
+        $this->sizes = $sizes;
+        $this->categories = $categories;
+        $this->subCategories = $subCategories;
+        $this->brands = $brands;
+        $this->units = $units;
     }
 
     private function returnListView(): string
@@ -53,25 +72,11 @@ class ProductController extends Controller
         $role = $this->getcurrentRole();
         return $role . self::VIEW_NAMESPACE . "edit";
     }
-    private function returnDetailView(): string
+ 
+    private function returnListRoute()
     {
         $role = $this->getcurrentRole();
-        return $role . self::VIEW_NAMESPACE . "edit";
-    }
-
-    private function returnDetailRelations(): array
-    {
-        return [
-            'category',
-            'subCategory',
-            'brand',
-            'gallery',
-            'vendor',
-            'admin',
-            'color',
-            'size',
-            'unit',
-        ];
+        return $role . "products.list";
     }
 
     private function returnInfoRelations(): array
@@ -88,51 +93,75 @@ class ProductController extends Controller
             'gallery',
         ];
     }
-
-    public function create(): View
+    public function index()
     {
         return parent::executeWithTryCatch(function (): View {
+            $view = $this->returnListView();
+            $infoRelations = $this->returnInfoRelations();
+            $products = parent::getAllResources([], $infoRelations);
+            return parent::successView($view, [
+                'products' => $products
+            ]);
+        });
+    }
+    public function create()
+    {
+        return parent::executeWithTryCatch(function () {
             $view = $this->returnCreateView();
-            return parent::successView($view);
+            $data = $this->getCommonData();
+            return $this->successView($view, ["data" => $data, 'product' => null]);
         });
     }
 
-    public function store(ProductRequest $request): RedirectResponse
+    public function store(ProductRequest $request)
     {
         return parent::handleOperation(function () use ($request) {
-            $data = $request->validated();
-            $data[self::THUMBNAIL_KEY] = $this->uploadThumbnail($request, self::THUMBNAIL_KEY);
-            $result = $this->createResource($data);
-            if ($result instanceof RedirectResponse) {
-                return $result;
+            $validatedData = $request->validated();
+            $validatedData['slug'] = $this->generateSlug($validatedData['title']);
+            $data = $this->setCurrentUserId($validatedData);
+            $product = parent::createResource($data);
+            if ($request->hasFile(self::THUMBNAIL_KEY)) {
+                $product->update([
+                    self::THUMBNAIL_KEY => $this->uploadThumbnail($request, self::THUMBNAIL_KEY)
+                ]);
             }
-            $this->uploadGallery($request, self::GALLERY_KEY, $result);
-        }, self::MSG_CREATE_SUCCESS);
+            $this->uploadGallery($request, self::GALLERY_KEY, $product);
+            $this->insertVariants($request, $product);
+        }, self::MSG_CREATE_SUCCESS, false, $this->returnListRoute());
+
     }
 
-    public function edit(int|string $product): View
+    public function edit(int|string $product)
     {
-        return parent::executeWithTryCatch(function () use ($product): View {
+        return parent::executeWithTryCatch(function () use ($product) {
             $view = $this->returnEditView();
-            $relations = $this->returnMediaRelations();
-            $data = $this->findOrRedirect($product, $relations);
-            return parent::successView($view, [
-                "product" => $data
+
+            $commonData = $this->getCommonData();
+
+            $productData = $this->findOrRedirect($product, $this->returnMediaRelations());
+
+            return $this->successView($view, [
+                'product' => $productData,
+                'data' => $commonData
             ]);
         });
     }
 
-    public function update(int|string $product, ProductRequest $request): RedirectResponse
+    public function update($product, ProductRequest $request)
     {
-        return parent::handleOperation(function () use ($request, $product) {
-            $data = $request->validated();
-            $data[self::THUMBNAIL_KEY] = $this->uploadThumbnail($request, self::THUMBNAIL_KEY);
-            $result = $this->updateResource($product, $data);
-            if ($result instanceof RedirectResponse) {
-                return $result;
-            }
-            $this->uploadGallery($request, self::GALLERY_KEY, $result);
+        $result = null;
+        $response = parent::handleOperation(function () use ($request, $product, &$result) {
+            $validatedData = $request->validated();
+            $validatedData['slug'] = $this->generateSlug($validatedData['title']);
+            $result = parent::updateResource($product, $validatedData);
         }, self::MSG_UPDATE_SUCCESS);
+        if ($request->hasFile(self::THUMBNAIL_KEY)) {
+            $product->update([
+                self::THUMBNAIL_KEY => $this->uploadThumbnail($request, self::THUMBNAIL_KEY)
+            ]);
+        }
+        $this->uploadGallery($request, self::GALLERY_KEY, $product);
+        return $response;
     }
 
     public function destroy(int|string $product): RedirectResponse
@@ -149,17 +178,7 @@ class ProductController extends Controller
             $this->deleteResource($product);
         }, self::MSG_DELETE_SUCCESS);
     }
-    public function index()
-    {
-        return parent::executeWithTryCatch(function (): View {
-            $view = $this->returnListView();
-            $infoRelations = $this->returnInfoRelations();
-            $products = parent::getAllResources([], $infoRelations);
-            return parent::successView($view, [
-                'products' => $products
-            ]);
-        });
-    }
+
 
     public function bulkDelete(ProductRequest $request): RedirectResponse
     {
@@ -181,19 +200,6 @@ class ProductController extends Controller
         }, self::MSG_DELETE_SUCCESS);
 
     }
-
-    public function detail(int|string $product): View
-    {
-        return parent::executeWithTryCatch(function () use ($product): View {
-            $relations = $this->returnDetailRelations();
-            $view = $this->returnDetailView();
-            $data = $this->findOrRedirect($product, $relations);
-            return parent::successView($view, [
-                "product" => $data
-            ]);
-        });
-    }
-
     public function toggleStatus(int|string $product): RedirectResponse
     {
         return parent::executeWithTryCatch(function () use ($product): RedirectResponse {
@@ -213,6 +219,18 @@ class ProductController extends Controller
             return $path;
         }
         return null;
+    }
+
+    private function getCommonData()
+    {
+        return [
+            'colors' => $this->colors->where(['status' => 1])->get(),
+            'sizes' => $this->sizes->where(['status' => 1])->get(),
+            'categories' => $this->categories->where(['status' => 1])->get(),
+            'subCategories' => $this->subCategories->where(['status' => 1])->get(),
+            'brands' => $this->brands->where(['status' => 1])->get(),
+            'units' => $this->units->where(['status' => 1])->get(),
+        ];
     }
 
     private function uploadGallery(ProductRequest $request, $fileKey, $result): void
@@ -240,4 +258,51 @@ class ProductController extends Controller
             }
         }
     }
+    private function generateSlug($title): string
+    {
+        $slug = Str::slug($title);
+        return $slug;
+    }
+    private function setCurrentUserId(array $data): array
+    {
+        if (auth()->guard('admin')->check()) {
+            $data['admin_id'] = auth()->guard('admin')->id();
+        }
+
+        if (auth()->guard('vendor')->check()) {
+            $data['vendor_id'] = auth()->guard('vendor')->id();
+        }
+
+        return $data;
+    }
+
+    private function insertVariants(ProductRequest $request, $product): void
+    {
+        $data = $request->validated();
+
+        $colorIds = $data['colors'] ?? [null];
+        $sizeIds = $data['sizes'] ?? [null];
+
+        $variants = [];
+
+        foreach ($colorIds as $colorId) {
+            foreach ($sizeIds as $sizeId) {
+                $variants[] = [
+                    'product_id' => $product->id,
+                    'color_id' => $colorId,
+                    'size_id' => $sizeId,
+                    'sku' => $product->sku
+                        . ($colorId ? "-C{$colorId}" : '')
+                        . ($sizeId ? "-S{$sizeId}" : ''),
+                    'price' => $data['price'],
+                    'stock' => $data['quantity'] ?? 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        $this->variantModel->insert($variants);
+    }
+
 }

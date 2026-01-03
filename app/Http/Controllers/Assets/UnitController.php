@@ -20,7 +20,6 @@ class UnitController extends Controller
     public const MSG_LIST_SUCCESS = self::PAGE_KEY . Messages::MSG_LIST_SUCCESS;
     public const MSG_ENABLED_SUCCESS = self::PAGE_KEY . Messages::MSG_ENABLED_SUCCESS;
     public const MSG_DISABLED_SUCCESS = self::PAGE_KEY . Messages::MSG_DISABLED_SUCCESS;
-    public const VIEW_NAMESPACE = "admin.unit.";
     public function __construct(AppUtils $appUtils)
     {
         return parent::__construct($appUtils, new Unit());
@@ -47,14 +46,7 @@ class UnitController extends Controller
             $this->deleteResource($unit);
         }, self::MSG_DELETE_SUCCESS);
     }
-    public function index()
-    {
-        return parent::executeWithTryCatch(function (): View {
-            $view = $this->returnListView();
-            $data = parent::getAllResources();
-            return $this->successView($view, ["units" => $data]);
-        });
-    }
+
 
     public function edit(int|string $unit)
     {
@@ -72,8 +64,4 @@ class UnitController extends Controller
         });
     }
 
-    private function returnListView(): string
-    {
-        return self::VIEW_NAMESPACE . 'index';
-    }
 }

@@ -11,7 +11,7 @@ class UserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -25,17 +25,29 @@ class UserRequest extends FormRequest
         return match ($routeName) {
             "user.register" => $this->register(),
             "user.login" => $this->login(),
+            "admin.user.store" => $this->register(),
+            "admin.user.update" => $this->updateUser(),
             default => []
         };
+    }
+    public function updateUser(): array
+    {
+        return [
+            "name" => "sometimes|required|min:4",
+            "email" => "sometimes|required",
+            "password" => "nullable|min:8",
+            "ip" => "sometimes|ip",
+            "status" => "sometimes|in:1,0",
+        ];
     }
     public function register(): array
     {
         return [
             "name" => "required|min:4",
-            "email" => "required|unique:email,users",
+            "email" => "required|unique:users,email",
             "password" => "required|min:8",
             "ip" => "nullable|ip",
-            "status" => "nullable",
+            "status" => "required|in:1,0",
         ];
     }
     public function login(): array

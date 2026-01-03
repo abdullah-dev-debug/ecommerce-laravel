@@ -1,0 +1,97 @@
+.announcement-bar {
+    background: var(--background);
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    display: inline-block;
+    width: 100%;
+
+}
+
+.announcement-bar .announcement-bar-container {
+    background: var(--primary-fully-dark);
+    color: var(--background);
+    padding: 10px 0;
+    position: relative;
+
+}
+
+.announcement-bar-container .announcement-content-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.announcement-content-wrap .announcement-items-wrap,
+.announcement-items-wrap .announcement-timer-wrap {
+    display: flex;
+    align-items: center;
+}
+
+.announcement-content-wrap .announcement-items-wrap {
+    column-gap: 2rem;
+}
+
+.announcement-items-wrap .announcement-timer-wrap {
+    column-gap: 0.85rem;
+    margin-right: 2rem;
+}
+
+.announcement-timer-wrap .announcement-timer-contain {
+    border: 1px solid var(--bs-border);
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+    text-align: center;
+    border-radius: 6px;
+}
+
+.hidden-announcement-bar {
+    display: none;
+
+}
+
+.announcement-bar .announcement-bar-close-btn {
+    position: absolute;
+    right: 35px;
+    top: 14px;
+}
+
+@media screen and (max-width:999px) {
+    .announcement-bar .announcement-bar-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .announcement-bar-container .announcement-content-wrap {
+        justify-content: space-between;
+    }
+
+    .announcement-content-wrap .announcement-items-wrap {
+        flex-direction: column;
+        row-gap: 0.25rem;
+        align-items: start;
+    }
+
+    .announcement-items-wrap .announcement-timer-wrap {
+        margin-right: 1rem;
+    }
+
+    .announcement-bar .announcement-timer-seconds {
+        display: none;
+    }
+
+    .announcement-bar .announcement-bar-close-btn {
+        right: 25px;
+    }
+
+    .announcement-bar .announcement-bar-close-btn svg {
+        width: 25px;
+        height: 25px;
+    }
+
+    .announcement-bar .btn-shop-now {
+        position: absolute;
+        right: 59px;
+        top: 38px;
+    }
+}

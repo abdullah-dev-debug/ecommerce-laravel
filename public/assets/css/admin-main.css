@@ -1,0 +1,117 @@
+@import url('_variable.css');
+@import url('layout/_layout.css');
+@import url('coman/_buttons.css');
+@import url('coman/_utilites.css');
+@import url('coman/_mediaPreview.css');
+
+.myPage-container {
+    width: 100%;
+    margin: 22px 0;
+}
+
+.myPage-inner-container {
+    padding: 25px 22px;
+}
+
+.myPage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.myPage-item-align-end {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    column-gap: 10px;
+}
+
+.myPage-item-align-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.table {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.table-action-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    column-gap: 0.86rem;
+}
+
+
+.product-form-container {
+    width: 100%;
+    display: inline-block;
+    margin-bottom: 50px;
+}
+
+
+.product-form-container .product-form-header {
+    background: var(--primary);
+    width: 100%;
+    padding: 12px 19px;
+    color: var(--background);
+}
+
+.product-form-header h3 {
+    font-size: 19px;
+    margin-bottom: 0 !important;
+}
+
+.product-form-container .product-form-field-wrap {
+    display: flex;
+    align-items: center;
+    column-gap: 0.85rem;
+    width: 100%;
+}
+
+.product-form-field-wrap .product-form-field-contain {
+    width: 100%;
+}
+
+.product-form-container .product-form-sku-btn-wrap {
+    position: absolute;
+    right: 0;
+}
+
+.product-form-container .product-form-image-col-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.product-form-image-container {
+    width: 300px;
+    overflow: hidden;
+}
+
+.product-form-flag-wrap {
+    display: flex;
+    align-items: center;
+    column-gap: 22px;
+}
+
+@media screen and (max-width:999px) {
+    .myPage-header {
+        flex-wrap: wrap;
+        align-items: start;
+    }
+
+    .table-action-col {
+        column-gap: 0.33rem;
+    }
+
+    .product-form-container .product-form-field-wrap {
+        flex-wrap: wrap;
+    }
+
+    .product-form-container .product-form-image-col-3 {
+        grid-template-columns: 1fr;
+    }
+}

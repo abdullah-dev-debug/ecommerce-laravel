@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Admin extends BaseModel
+class Admin extends Authenticatable
 {
+    use Notifiable;
+    
     protected $table = "admins";
+    
     protected $fillable = [
         'name',
         'email',
@@ -16,10 +21,17 @@ class Admin extends BaseModel
         'role_id',
         'ip',
     ];
+    
     public $timestamps = true;
 
     protected $hidden = [
-        'password'
+        'password',
+        'remember_token',
+    ];
+    
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed', 
     ];
 
     public function role(): BelongsTo

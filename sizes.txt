@@ -15,3 +15,31 @@ width 300 height 300
 Product Gallery
 Backend gallery image size 1200 x 1200
 Frontend gallery image 300 x 300
+
+
+
+
+  // return parent::handleOperation(function () use ($request) {
+        //     $data = $request->validated();
+        //     $data[self::THUMBNAIL_KEY] = $this->uploadThumbnail($request, self::THUMBNAIL_KEY);
+        //     $product = $this->createResource($data);
+        //     if ($product instanceof RedirectResponse)
+        //         return $product;
+        //     $this->uploadGallery($request, self::GALLERY_KEY, $product);
+        //     $this->insertVariants($request, $product);
+        // }, self::MSG_CREATE_SUCCESS);
+
+
+
+
+
+  <!-- @if (Auth::guard('admin')->user()) -->
+            <!--  @endif
+            @if (Auth::guard('web')->user())
+                @include('admin.partials.menu.vendor')
+            @endif -->
+
+
+
+                data-title="Delete Brand"
+data-text="Are you sure you want to delete '{{ $brand->name }}' Brand?"

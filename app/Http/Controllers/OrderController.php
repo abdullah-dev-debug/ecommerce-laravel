@@ -2,72 +2,128 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\Messages;
 use App\Http\Requests\OrderItemRequest;
 use App\Http\Requests\OrderRequest;
-use App\Http\Requests\TransactionRequest;
 use App\Models\CustomerAddress;
 use App\Models\Order;
-use App\Models\Transactions;
+use App\Services\OrderService;
+use App\Services\TransactionService;
 use App\Utils\AppUtils;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use OrderService;
 
 class OrderController extends Controller
 {
-    public const MSG_ORDER_CREATED = 'Order has been created successfully.';
-    public const MSG_ORDER_UPDATED = 'Order has been updated successfully.';
-    public const MSG_ORDER_DELETED = 'Order has been deleted successfully.';
+    public const PAGE_KEY = 'order';
+    public const MSG_CREATE_SUCCESS = self::PAGE_KEY . Messages::MSG_CREATE_SUCCESS;
     protected OrderService $orderService;
-    protected $transactionModel, $customerAddressModel;
+    protected TransactionService $transactionService;
+    protected CustomerAddress $customerAddressModel;
+
     public function __construct(
         AppUtils $appUtils,
         OrderService $orderService,
-        Transactions $transactionModel,
+        TransactionService $transactionService,
         CustomerAddress $customerAddressModel
     ) {
         parent::__construct($appUtils, new Order());
         $this->orderService = $orderService;
+        $this->transactionService = $transactionService;
         $this->customerAddressModel = $customerAddressModel;
-        $this->transactionModel = $transactionModel;
     }
 
-
-    public function store(
-        OrderRequest $orderRequest,
-        OrderItemRequest $orderItemRequest,
-        TransactionRequest $transactionRequest
-    ) {
-        return parent::executeWithTryCatch(function () use ($orderRequest, $orderItemRequest, $transactionRequest) {
-            $orderCustomerData = $this->prepareOrderCustomerData($orderRequest);
-            $orderData = $this->prepareOrderData($orderRequest);
-            $orderItemData = $this->prepareOrderItemData($orderItemRequest);
-            $transactionData = $this->prepareTransactionData($transactionRequest);
+    public function index()
+    {
+        return parent::executeWithTryCatch(function () {
+            $orders = $this->model->with([
+                'customer:id,name,email',
+                'items.product:id,name',
+                'transactions:id,order_id,status'
+            ])
+                ->latest()
+                ->get();
+            return view('admin.orders.list', [
+                'orders' => $orders
+            ]);
         });
     }
 
-    private function generateUniqueSku(
-        Model $model,
-        $field = 'order_number',
-        $prefix = '#ORD-',
-        $length = 8
+    public function storeAdminOrder(OrderRequest $orderRequest, OrderItemRequest $orderItemRequest)
+    {
+        return parent::handleOperation(function () use ($orderRequest, $orderItemRequest) {
+            $this->createOrder($orderRequest, $orderItemRequest);
+        }, self::MSG_CREATE_SUCCESS, false, 'admin.orders.list');
+    }
 
-    ): string {
-        do {
-            $uniqueNumber = $prefix . strtoupper(Str::random($length));
-        } while ($model->where($field, $uniqueNumber)->exists());
-        return $uniqueNumber;
+    /**
+     * Step 1: Customer submits order & goes to Stripe Hosted Checkout
+     */
+    public function stripeCheckout(OrderRequest $orderRequest, OrderItemRequest $orderItemRequest)
+    {
+        $order = $this->createOrder($orderRequest, $orderItemRequest);
+        return $this->transactionService->createStripeCheckoutSession($order);
+    }
+
+    /**
+     * Step 2: Payment success callback
+     */
+    public function stripeSuccess(Request $request)
+    {
+        $orderId = $request->query('order_id');
+        $sessionId = $request->query('session_id') ?? null;
+
+        $transaction = $this->transactionService->handleStripeSuccess($orderId, $sessionId);
+
+        return view('checkout.success', [
+            'order' => $transaction->order
+        ]);
+    }
+
+    /**
+     * Step 3: Payment cancelled callback
+     */
+    public function stripeCancel(Request $request)
+    {
+        $orderId = $request->query('order_id');
+        $order = $this->transactionService->handleStripeCancel($orderId);
+
+        return view('checkout.cancel', [
+            'order' => $order
+        ]);
+    }
+
+
+
+    /* -------------------- Helpers -------------------- */
+
+    private function createOrder(OrderRequest $orderRequest, OrderItemRequest $orderItemRequest)
+    {
+        $customerData = $this->prepareOrderCustomerData($orderRequest);
+        $orderData = $this->prepareOrderData($orderRequest);
+        $orderItemData = $this->prepareOrderItemData($orderItemRequest);
+        $order = $this->orderService->createOrderWithItems(
+            $customerData,
+            $orderData,
+            [$orderItemData]
+        );
+        return $order;
+    }
+
+    private function generateUniqueSku($length = 8): string
+    {
+        return '#ORD-' . Str::upper(Str::random($length));
     }
 
     private function prepareOrderData(OrderRequest $orderRequest): array
     {
         $data = $orderRequest->validated();
         return [
-            "customer_id" => Auth::check() ? Auth::user()->id : null,
-            "order_number" => $this->generateUniqueSku($this->model),
-            "total_amount" => $data['total_amount'],
-            "status" => $data['status']
+            'customer_id' => Auth::user()->id ?? null,
+            'order_number' => $this->generateUniqueSku(),
+            'total_amount' => $data['total_amount'],
+            'status' => 'pending',
         ];
     }
 
@@ -75,15 +131,15 @@ class OrderController extends Controller
     {
         $data = $orderRequest->validated();
         return [
-            "first_name" => $data['first_name'],
-            "last_name" => $data['last_name'],
-            "email" => $data['email'],
-            "phone" => $data['phone'],
-            "address" => $data['address'],
-            "country_id" => $data['country_id'],
-            "city" => $data['city'],
-            "state" => $data['state'],
-            "pin_code" => $data['pin_code'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'address' => $data['address'],
+            'country_id' => $data['country_id'],
+            'city' => $data['city'],
+            'state' => $data['state'],
+            'pin_code' => $data['pin_code'],
         ];
     }
 
@@ -91,32 +147,12 @@ class OrderController extends Controller
     {
         $data = $orderItemRequest->validated();
         return [
-            "product_id" => $data['product_id'],
-            "quantity" => $data['quantity'],
-            "unit_price" => $data['unit_price'],
-            "discounted_price" => $data['discounted_price'],
-            "tax_amount" => $data['tax_amount'],
-            "total_price" => $data['total_price'],
-        ];
-    }
-
-    private function prepareTransactionData(TransactionRequest $transactionRequest): array
-    {
-        $data = $transactionRequest->validated();
-        return [
-            "transaction_number" => $this->generateUniqueSku(
-                $this->transactionModel,
-                'transaction_id',
-                '#TXN-',
-                10
-            ),
-            "method" => $data['method'],
-            "currency_id" => $data['currency_id'],
-            "amount" => $data['amount'],
-            "gateway_transaction_id" => null,
-            "gateway_intent_id" => null,
-            "gateway_response" => null,
-            "status" => $data['status'],
+            'product_id' => $data['product_id'],
+            'quantity' => $data['quantity'],
+            'unit_price' => $data['unit_price'],
+            'discounted_price' => $data['discounted_price'] ?? 0,
+            'tax_amount' => $data['tax_amount'] ?? 0,
+            'total_price' => $data['total_price'],
         ];
     }
 }

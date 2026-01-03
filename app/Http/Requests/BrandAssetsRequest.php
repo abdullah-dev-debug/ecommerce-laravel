@@ -7,165 +7,203 @@ use Illuminate\Support\Facades\Auth;
 
 class BrandAssetsRequest extends FormRequest
 {
+    private $entityTableMap = [
+        'category' => "categories",
+        'subcategory' => "sub_categories",
+        'color' => "colors",
+        'size' => "sizes",
+        'unit' => "units",
+        'brand' => "brands"
+    ];
+
     /**
-     * Determine if the user is authorized to make this request.
+     * Check if user is logged in as Admin or Vendor
      */
     public function authorize(): bool
     {
-        $admin = $this->getcurrentRole('admin');
-        $vendor = $this->getcurrentRole('vendor');
-        return $admin || $vendor;
+        return $this->getCurrentRole('admin') || $this->getCurrentRole('vendor');
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-
-    private function getcurrentRole($name): bool
+    private function getCurrentRole($name): bool
     {
         return Auth::guard($name)->check();
     }
 
-    private $entityTableMap = [
-        'brand' => 'brands',
-        'category' => 'categories',
-        'subcategory' => 'sub_categories',
-        'unit' => 'units',
-        'color' => 'colors',
-        'size' => 'sizes'
-    ];
-
-
-    public function rules()
+    public function rules(): array
     {
-        $parts = explode('.', $this->route()->getName());
-        $action = array_pop($parts);
-        $entity = ucfirst(array_pop($parts));
-        $method = $action . $entity;
-        if (method_exists($this, $method)) {
-            return $this->{$method}();
-        }
-        return [];
+        $route = $this->route()->getName();
+
+        return match (true) {
+
+            str_contains($route, 'attributes.size.store') =>
+            $this->createSize(),
+
+            str_contains($route, 'attributes.size.update') =>
+            $this->updateSize(),
+
+            str_contains($route, 'attributes.color.store') =>
+            $this->createColor(),
+
+            str_contains($route, 'attributes.color.update') =>
+            $this->updateColor(),
+
+            str_contains($route, 'attributes.unit.store') =>
+            $this->createUnit(),
+
+            str_contains($route, 'attributes.unit.update') =>
+            $this->updateUnit(),
+
+            str_contains($route, 'subcategory.store') =>
+            $this->createSubCategory(),
+
+            str_contains($route, 'subcategory.update') =>
+            $this->updateSubCategory(),
+
+            default => [],
+        };
     }
 
-    public function createColor(): array
-    {
-        $table = $this->entityTableMap['color'];
 
-        return [
-            "name" => "required|min:3|exists:$table,name",
-            "slug" => "required|exists:$table,slug",
-            "code" => "required|exists:$table,code",
-            "status" => "required|in:0,1",
-        ];
-    }
-
-    public function updateColor(): array
-    {
-        return [
-            "name" => "sometimes",
-            "slug" => "sometimes",
-            "code" => "sometimes",
-            "status" => "sometimes|in:0,1",
-
-        ];
-    }
-
-    public function createSize(): array
-    {
-        $table = $this->entityTableMap['size'];
-        return $this->createSmItems($table);
-    }
-
-    public function updateSize(): array
-    {
-        return $this->updateSmItems();
-    }
-
-    public function createUnit(): array
-    {
-        $table = $this->entityTableMap['unit'];
-        return $this->createSmItems($table);
-    }
-
-    public function updateUnit(): array
-    {
-        return $this->updateSmItems();
-    }
-
-    public function createBrand(): array
-    {
-        $table = $this->entityTableMap['brand'];
-        return $this->createAsset($table);
-    }
-
-    public function updateBrand(): array
-    {
-        return $this->updateAssets();
-    }
-
+    // category Rules
     public function createCategory(): array
     {
-        $table = $this->entityTableMap['category'];
-        return $this->createAsset($table, 'required');
-    }
-    public function updateCategory(): array
-    {
-        return $this->updateAssets();
+        return $this->createItemRules(true, true, $this->entityTableMap['category']);
     }
 
+    public function updateCategory(): array
+    {
+        $id = $this->route('category'); // route parameter for update
+        return $this->updateItemRules(true, $this->entityTableMap['category'], $id);
+    }
+
+    // Sub category Rules
     public function createSubCategory(): array
     {
-        $table = $this->entityTableMap['subcategory'];
-        $fields = $this->createAsset($table);
+        $commonData = $this->createItemRules(false, true, $this->entityTableMap['subcategory']);
         return [
-            ...$fields,
-            "category_id" => "required|exists:{$this->entityTableMap['category']},id"
+            ...$commonData,
+            "category_id" => "required|exists:" . $this->entityTableMap['category'] . ',id'
         ];
     }
 
     public function updateSubCategory(): array
     {
-        $fields = $this->updateAssets();
+        $table = $this->entityTableMap['subcategory'];
+        $id = $this->route('subcategory');
+        $commonData = $this->updateItemRules(true, $table, $id);
         return [
-            ...$fields,
-            "category_id" => "sometimes|exists:{$this->entityTableMap['category']},id"
+            ...$commonData,
+            "category_id" => "sometimes|exists:" . $table = $this->entityTableMap['category'] . ',id'
         ];
     }
 
-    private function createSmItems($table): array
+    // create color rules is given 
+    public function createColor(): array
     {
+        $table = $this->entityTableMap['color'];
+        $data = $this->createItemRules(false, true, $table);
         return [
-            "name" => "required|min:5|unique:$table,name",
-            "status" => "required|in:0,1",
+            ...$data,
+            "code" => "required|unique:$table,code"
         ];
     }
-    private function updateSmItems(): array
+    public function updateColor(): array
     {
+        $id = $this->route('color');
+        $table = $this->entityTableMap['color'];
+        $data = $this->updateItemRules(true, $table, $id);
         return [
-            "name" => "sometimes",
-            "status" => "sometimes|in:0,1",
+            ...$data,
+            "code" => "sometimes"
         ];
     }
 
-    private function createAsset($table, $isValid = "nullable"): array
+    // Size Rule is given 
+
+    public function createSize(): array
     {
+        $table = $this->entityTableMap['size'];
+        $data = $this->createItemRules(false, true, $table);
         return [
-            "name" => "required|min:5|unique:$table,name",
-            "icon" => "$isValid|file|mimes:jpg,png,jpeg,webp|max:2048",
-            "slug" => "required",
-            "status" => "required|in:0,1",
+            ...$data,
+            "code" => "nullable",
+            "description" => "nullable",
         ];
     }
-    private function updateAssets(): array
+
+    public function updateSize(): array
+    {
+        $id = $this->route('size');
+        $table = $this->entityTableMap['size'];
+        $data = $this->updateItemRules(true, $table, $id);
+        return [
+            ...$data,
+            "code" => "sometimes",
+            "description" => "sometimes",
+        ];
+    }
+
+
+    // unit Rule is given 
+
+    public function createUnit(): array
+    {
+        $table = $this->entityTableMap['unit'];
+        $data = $this->createItemRules(false, true, $table);
+        return [
+            ...$data,
+            "symbol" => "nullable",
+            "type" => "nullable",
+        ];
+    }
+
+    public function updateUnit(): array
+    {
+        $id = $this->route('unit');
+        $table = $this->entityTableMap['unit'];
+        $data = $this->updateItemRules(true, $table, $id);
+        return [
+            ...$data,
+            "symbol" => "sometimes",
+            "type" => "sometimes",
+        ];
+    }
+
+    // Brands Rule is given 
+
+    public function createBrand(): array
+    {
+        $table = $this->entityTableMap['brand'];
+        return $this->createItemRules(true, true, $table);
+
+    }
+
+    public function updateBrand(): array
+    {
+        $id = $this->route('brand');
+        $table = $this->entityTableMap['brand'];
+        return $this->updateItemRules(true, $table, $id);
+    }
+
+
+    public function createItemRules(bool $isRequired = true, bool $isUnique = true, string $table): array
     {
         return [
-            "name" => "sometimes",
-            "icon" => "sometimes|file|mimes:jpg,png,jpeg,webp|max:2048",
-            "slug" => "sometimes",
-            "status" => "sometimes|in:0,1",
+            'icon' => ($isRequired ? 'required' : 'nullable') . '|file|mimes:jpg,png,webp|max:2048',
+            'name' => 'required' . ($isUnique ? "|unique:$table,name" : ''),
+            'slug' => ($isRequired ? 'required' : 'nullable') . ($isUnique ? "|unique:$table,slug" : ''),
+            'status' => 'required|in:0,1',
+
+        ];
+    }
+
+    public function updateItemRules(bool $isUnique = true, string $table, $id = null): array
+    {
+        return [
+            'icon' => 'sometimes|file|mimes:jpg,png,webp|max:2048',
+            'name' => 'sometimes' . ($isUnique ? "|unique:$table,name,$id" : ''),
+            'slug' => 'sometimes' . ($isUnique ? "|unique:$table,slug,$id" : ''),
+            'status' => 'sometimes|in:0,1'
         ];
     }
 }

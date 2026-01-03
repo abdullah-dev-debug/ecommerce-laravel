@@ -2,12 +2,9 @@
 
 use App\Utils\AppUtils;
 use App\Utils\ErrorUtils;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Spatie\Image\Image;
-use Spatie\Image\Manipulations;
-
 
 function UploadFile(
     string $parentFolder,
@@ -16,40 +13,100 @@ function UploadFile(
     int $width,
     int $height
 ): ?string {
-    if (request()->hasFile($fileKey)) {
-        $file = request()->file($fileKey);
 
+    if (!request()->hasFile($fileKey)) {
+        return null;
+    }
+
+    $file = request()->file($fileKey);
+
+    if (!$file->isValid()) {
+        return null;
+    }
+
+    $directory = public_path(
+        'assets/' . $parentFolder . ($childFolder ? '/' . $childFolder : '')
+    );
+
+    if (!File::exists($directory)) {
+        File::makeDirectory($directory, 0755, true);
+    }
+
+    $filename = Str::uuid() . '.webp';
+    $tempPath = $directory . '/temp_' . $filename;
+    $finalPath = $directory . '/' . $filename;
+
+    // Move uploaded file
+    $file->move($directory, 'temp_' . $filename);
+
+    // Spatie Image v3 syntax
+    Image::load($tempPath)
+        ->width($width)
+        ->height($height)
+        ->format('webp')
+        ->quality(80)
+        ->optimize()
+        ->save($finalPath);
+
+    File::delete($tempPath);
+
+    return '/assets/' . trim(
+        $parentFolder . ($childFolder ? '/' . $childFolder : ''),
+        '/'
+    ) . '/' . $filename;
+}
+
+
+
+function UploadFiles(
+    string $parentFolder,
+    ?string $childFolder,
+    array $files = [],
+    int $width = 1200,
+    int $height = 1200
+): array {
+    $uploadedPaths = [];
+
+    if (empty($files)) {
+        return $uploadedPaths;
+    }
+
+    $directory = public_path("assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''));
+
+    if (!File::exists($directory)) {
+        File::makeDirectory($directory, 0755, true);
+    }
+
+    foreach ($files as $file) {
         if ($file && $file->isValid()) {
 
-            $directory = public_path("assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''));
-
-            if (!File::exists($directory)) {
-                File::makeDirectory($directory, 0755, true);
-            }
-
             $filename = Str::uuid() . '.webp';
-            $filePath = "$directory/$filename";
+            $tempName = 'temp_' . $filename;
 
-            $file->move($directory, 'temp_' . $filename);
+            // Move temp file
+            $file->move($directory, $tempName);
 
-            Image::load("$directory/temp_$filename")
-                ->resize($width, $height, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                })
-                ->format(Manipulations::FORMAT_WEBP)
+            // Spatie Image v3 syntax
+            Image::load("$directory/$tempName")
+                ->width($width)
+                ->height($height)
+                ->format('webp')
                 ->quality(80)
                 ->optimize()
-                ->save($filePath);
+                ->save("$directory/$filename");
 
-            File::delete("$directory/temp_$filename");
-            return rtrim("/assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''), '/') . "/$filename";
+            // Delete temp file
+            File::delete("$directory/$tempName");
+
+            $uploadedPaths[] =
+                "/assets/$parentFolder" .
+                ($childFolder ? "/$childFolder" : '') .
+                "/$filename";
         }
     }
 
-    return null;
+    return $uploadedPaths;
 }
-
 
 
 function UploadVideo(
@@ -103,63 +160,6 @@ function UploadVideo(
     }
 }
 
-
-function UploadFiles(
-    string $parentFolder,
-    ?string $childFolder,
-    array $files = [],
-    int $width = 1200,
-    int $height = 1200
-): array|JsonResponse {
-    $uploadedPaths = [];
-
-    try {
-        if (empty($files)) {
-            return $uploadedPaths;
-        }
-
-        $directory = public_path("assets/$parentFolder" . ($childFolder ? "/$childFolder" : ''));
-
-        if (!File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true);
-        }
-
-        foreach ($files as $file) {
-            if ($file && $file->isValid()) {
-
-                // force webp
-                $filename = Str::uuid() . '.webp';
-                $tempName = 'temp_' . $filename;
-
-                // move temp file
-                $file->move($directory, $tempName);
-
-                Image::load("$directory/$tempName")
-                    ->resize($width, $height, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    })
-                    ->format(Manipulations::FORMAT_WEBP)
-                    ->quality(80)
-                    ->optimize()
-                    ->save("$directory/$filename");
-
-                // delete temp file
-                File::delete("$directory/$tempName");
-
-                $uploadedPaths[] =
-                    "/assets/$parentFolder" .
-                    ($childFolder ? "/$childFolder" : '') .
-                    "/$filename";
-            }
-        }
-
-        return $uploadedPaths;
-
-    } catch (\Throwable $th) {
-        return ErrorUtils::handle($th, "Helper @UploadFiles");
-    }
-}
 function DeleteFile($filePath)
 {
     try {

@@ -6,6 +6,8 @@ class Sizes extends BaseModel
     protected $table = "sizes";
     protected $fillable = [
         'name',
+        'code',
+        'description',
         'slug',
         'status'
     ];

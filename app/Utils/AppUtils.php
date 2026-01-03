@@ -117,7 +117,10 @@ class AppUtils
 
     public static function nullCheck($item, string $message)
     {
-        return !$item ? throw new MyCustomException($message, 404) : $item;
+        if (!$item) {
+            throw new MyCustomException($message, 404);
+        }
+        return $item;
     }
 
 
@@ -157,5 +160,4 @@ class AppUtils
         }
         return $merged;
     }
-
 }

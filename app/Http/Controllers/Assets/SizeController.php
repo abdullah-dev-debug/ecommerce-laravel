@@ -20,25 +20,26 @@ class SizeController extends Controller
     public const MSG_LIST_SUCCESS = self::PAGE_KEY . Messages::MSG_LIST_SUCCESS;
     public const MSG_ENABLED_SUCCESS = self::PAGE_KEY . Messages::MSG_ENABLED_SUCCESS;
     public const MSG_DISABLED_SUCCESS = self::PAGE_KEY . Messages::MSG_DISABLED_SUCCESS;
-    public const VIEW_NAMESPACE = "admin.size.";
     public function __construct(AppUtils $appUtils)
     {
         return parent::__construct($appUtils, new Sizes());
     }
 
-    public function store(BrandAssetsRequest $request): RedirectResponse
+    public function store(BrandAssetsRequest $request)
     {
         $data = $request->validated();
-        return parent::handleOperation(function () use ($data) {
+        return parent::executeWithTryCatch(function () use ($data): JsonResponse {
             $this->createResource($data);
-        }, self::MSG_CREATE_SUCCESS);
+            return $this->apiSuccessResponse(self::MSG_CREATE_SUCCESS);
+        });
     }
-    public function update(int|string $size, BrandAssetsRequest $request): RedirectResponse
+    public function update(int|string $size, BrandAssetsRequest $request)
     {
         $data = $request->validated();
-        return parent::handleOperation(function () use ($size, $data) {
+        return parent::executeWithTryCatch(function () use ($size, $data): JsonResponse {
             $this->updateResource($size, $data);
-        }, self::MSG_UPDATE_SUCCESS);
+            return $this->apiSuccessResponse(self::MSG_UPDATE_SUCCESS);
+        });
     }
 
     public function destroy(int|string $size): RedirectResponse
@@ -46,14 +47,6 @@ class SizeController extends Controller
         return parent::handleOperation(function () use ($size) {
             $this->deleteResource($size);
         }, self::MSG_DELETE_SUCCESS);
-    }
-    public function index()
-    {
-        return parent::executeWithTryCatch(function (): View {
-            $view = $this->returnListView();
-            $data = parent::getAllResources();
-            return $this->successView($view, ["sizes" => $data]);
-        });
     }
 
     public function edit(int|string $size)
@@ -70,10 +63,5 @@ class SizeController extends Controller
             $currentStatus = $this->toggleResourceStatus($size, self::MSG_DISABLED_SUCCESS, self::MSG_ENABLED_SUCCESS);
             return $this->successRedirect($currentStatus['message']);
         });
-    }
-
-    private function returnListView(): string
-    {
-        return self::VIEW_NAMESPACE . 'index';
     }
 }

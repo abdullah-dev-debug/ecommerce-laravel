@@ -28,12 +28,13 @@ class CategoryController extends Controller
         return parent::__construct($appUtils, new Category());
     }
 
-    public function create(): View
+    public function create()
     {
-        $view = $this->returnCreateView();
-        return $this->successView($view);
+        return parent::executeWithTryCatch(function () {
+            $view = $this->returnCreateView();
+            return $this->successView($view);
+        });
     }
-
     public function store(BrandAssetsRequest $request): RedirectResponse
     {
         $data = $request->validated();
@@ -42,11 +43,22 @@ class CategoryController extends Controller
             $this->createResource($data);
         }, self::MSG_CREATE_SUCCESS);
     }
+    public function edit(int|string $category)
+    {
+        return parent::executeWithTryCatch(function () use ($category): View {
+            $view = $this->returnEditView();
+            $data = $this->findOrRedirect($category);
+            return $this->successView($view, ['category' => $data]);
+        });
+    }
     public function update(int|string $category, BrandAssetsRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        return parent::handleOperation(function () use ($category, $data, $request) {
+        if ($request->hasFile(self::FILE_KEY)) {
             $data[self::FILE_KEY] = $this->uploadIcon($request, self::FILE_KEY);
+        }
+        
+        return parent::handleOperation(function () use ($category, $data) {
             $this->updateResource($category, $data);
         }, self::MSG_UPDATE_SUCCESS);
     }
@@ -66,18 +78,10 @@ class CategoryController extends Controller
         return parent::executeWithTryCatch(function (): View {
             $view = $this->returnListView();
             $data = parent::getAllResources();
-            return $this->successView($view, ["brands" => $data]);
+            return $this->successView($view, ["categories" => $data]);
         });
     }
 
-    public function edit(int|string $category)
-    {
-        return parent::executeWithTryCatch(function () use ($category): View {
-            $data = $this->findOrRedirect($category);
-            $view = $this->returnEditView();
-            return $this->successView($view, ["category" => $data]);
-        });
-    }
 
     public function toggleStatus(int|string $category)
     {
@@ -91,25 +95,28 @@ class CategoryController extends Controller
     {
         return self::VIEW_NAMESPACE . 'index';
     }
-    private function returnEditView(): string
-    {
-        return self::VIEW_NAMESPACE . 'edit';
-    }
     private function returnCreateView(): string
     {
         return self::VIEW_NAMESPACE . 'create';
     }
-    // 
-    private function uploadIcon($request, $fileKey): RedirectResponse|string|null
+    private function returnEditView(): string
     {
-        try {
-            $file = $request->file($fileKey);
-            if ($request->hasFile($fileKey) && $file->isValid()) {
-                return UploadFile(self::PARENT_FOLDER, self::CHILD_FOLDER, $fileKey, 128, 128);
-            }
-            return null;
-        } catch (\Throwable $th) {
-            return $this->errorRedirect($th->getMessage());
-        }
+        return self::VIEW_NAMESPACE . 'edit';
     }
+
+    private function uploadIcon($request, string $fileKey): ?string
+    {
+        if (!$request->hasFile($fileKey)) {
+            return null;
+        }
+
+        return UploadFile(
+            self::PARENT_FOLDER,
+            self::CHILD_FOLDER,
+            $fileKey,
+            214,
+            214
+        );
+    }
+
 }

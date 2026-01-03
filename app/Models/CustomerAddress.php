@@ -8,6 +8,7 @@ class CustomerAddress extends BaseModel
 {
     protected $table = 'customer_addresses';
     protected $fillable = [
+        'customer_id',
         'first_name',
         'last_name',
         'email',
@@ -25,6 +26,13 @@ class CustomerAddress extends BaseModel
         return $this->belongsTo(
             Country::class,
             'country_id'
+        );
+    }
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'customer_id'
         );
     }
 }

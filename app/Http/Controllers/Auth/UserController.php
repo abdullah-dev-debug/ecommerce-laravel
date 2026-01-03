@@ -20,7 +20,7 @@ class UserController extends Controller
     public const MSG_DELETE = self::PAGE_KEY . Messages::MSG_DELETE_SUCCESS;
     public const MSG_UPDATE = self::PAGE_KEY . Messages::MSG_UPDATE_SUCCESS;
     public const CURRENT_ROLE = 3;
-    public const VIEW_NAMESPACE = "admin.user.";
+    public const VIEW_NAMESPACE = "admin.users.";
 
     private function returnListView(): string
     {
@@ -88,7 +88,7 @@ class UserController extends Controller
         return parent::executeWithTryCatch(function (): View {
             $view = $this->returnListView();
             $filter = $this->returnUserFilter();
-            $list = parent::getAllResources($filter);
+            $list = $this->model->withCount('orders')->withSum('orders','total_amount')->get();
             return $this->successView($view, ["users" => $list]);
         });
     }
@@ -106,7 +106,7 @@ class UserController extends Controller
         return parent::handleOperation(function () use ($request) {
             $validatedData = $this->prepareData($request);
             $this->service->register($validatedData);
-        }, self::MSG_REG);
+        }, self::MSG_REG, false, $this->returnListRoute());
     }
 
     public function register(UserRequest $request): RedirectResponse
@@ -117,12 +117,20 @@ class UserController extends Controller
         }, self::MSG_REG);
     }
 
-    public function update(int|string $user, UserRequest $request): RedirectResponse
+    public function update(int|string $client, UserRequest $request): RedirectResponse
     {
-        return parent::handleOperation(function () use ($user, $request) {
+        return parent::handleOperation(function () use ($client, $request) {
+
             $data = $request->validated();
-            parent::updateResource($user, $data);
-        }, self::MSG_UPDATE);
+
+            if (empty($data['password'])) {
+                unset($data['password']);
+            } else {
+                $data['password'] = bcrypt($data['password']);
+            }
+
+            parent::updateResource($client, $data);
+        }, self::MSG_UPDATE, false, $this->returnListRoute());
     }
 
     public function login(UserRequest $request)
@@ -131,7 +139,7 @@ class UserController extends Controller
             $data = $request->validated();
             $view = $this->returnProfileView();
             $this->service->login($data);
-            return $this->successView($view, [],);
+            return $this->successView($view, []);
         });
     }
 
@@ -151,5 +159,10 @@ class UserController extends Controller
             $this->service->logout();
             return $this->successRedirect(self::MSG_LOGOUT);
         });
+    }
+
+    private function returnListRoute()
+    {
+        return "admin.user.list";
     }
 }

@@ -1,0 +1,52 @@
+.bs-btn {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    column-gap: 0.65rem;
+    padding: 12px 22px;
+    background: transparent;
+    color: var(--background);
+    text-decoration: none;
+    outline: none;
+    border: 0;
+    border-radius: 8px;
+    transition: 0.8s linear;
+}
+
+.bs-btn-primary {
+    background: var(--primary);
+}
+
+.bs-btn-primary:hover,
+.bs-btn-primary:focus {
+    background: var(--primary-light);
+    color: var(--background);
+}
+
+.bs-btn-white {
+    background: var(--background);
+    color: var(--text-primary);
+}
+
+.bs-btn-cancel{
+    background: #323232;
+}
+
+.bs-btn-white:hover,
+.bs-btn-white:focus {
+    background: var(--text-primary);
+    color: var(--background);
+    text-decoration: none;
+}
+
+.bs-btn-white:hover svg,
+.bs-btn-white:focus svg {
+    fill: var(--background) !important;
+}
+
+.bs-btn-primary iconify-icon,
+.bs-btn-white:hover iconify-icon,
+.bs-btn-cancel:hover {
+    color: var(--background);
+}

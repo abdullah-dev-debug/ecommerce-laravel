@@ -20,6 +20,11 @@ class Order extends BaseModel
     {
         return $this->belongsTo(User::class, 'customer_id');
     }
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
     public function address(): BelongsTo
     {
         return $this->belongsTo(CustomerAddress::class, 'customer_address_id');
@@ -28,8 +33,11 @@ class Order extends BaseModel
     {
         return $this->hasMany(Transactions::class, 'order_id');
     }
-    public function latestTransactionStatus(): mixed
+    public function latestTransactionStatus(): string
     {
-        return $this->transactions()->first()->status ?? '';
+        return $this->transactions()
+            ->latest('id')
+            ->value('status') ?? '';
     }
+
 }

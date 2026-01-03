@@ -17,95 +17,129 @@ class ProductRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         if ($this->isMethod('post')) {
             return $this->createProduct();
         }
+
         if ($this->isMethod('put') || $this->isMethod('patch')) {
             return $this->updateProduct();
         }
+
         return [];
     }
 
+    /**
+     * Validation rules for creating a product
+     */
     public function createProduct(): array
     {
         return [
-            "title" => "required",
-            "sku" => "required|unique:products,sku",
-            "slug" => "required|unique:products,slug",
-            "description" => "required",
+            "title" => "required|string|max:255",
+            "sku" => "required|string|unique:products,sku",
+
+            "description" => "required|string",
+
             "vendor_id" => "nullable|exists:vendors,id",
             "admin_id" => "nullable|exists:admins,id",
+
             "category_id" => "required|exists:categories,id",
             "sub_category_id" => "required|exists:sub_categories,id",
             "brand_id" => "required|exists:brands,id",
-            "color_id" => "required|exists:colors,id",
-            "size_id" => "required|exists:sizes,id",
+
+            "colors" => "nullable|array",
+            "colors.*" => "exists:colors,id",
+
+            "sizes" => "nullable|array",
+            "sizes.*" => "exists:sizes,id",
+
             "unit_id" => "required|exists:units,id",
+
             "price" => "required|numeric|min:0",
             "cost_price" => "required|numeric|min:0",
-            "discount_price" => "required|numeric|min:0",
-            "discount_percentage" => "required|numeric|min:0|max:100",
-            "low_stock_threshold" => "required|numeric|min:0",
-            "sold_count" => "nullable",
-            "view_count" => "nullable",
+            "discount_price" => "nullable|numeric|min:0",
+            "discount_percentage" => "nullable|numeric|min:0|max:100",
+
             "quantity" => "required|numeric|min:0",
-            "thumbnail" => "required|file|mimes:jpg,png,webp,jpeg|max:2048",
+            "low_stock_threshold" => "required|numeric|min:0",
+            "sold_count" => "nullable|numeric|min:0",
+            "view_count" => "nullable|numeric|min:0",
+
+            "thumbnail" => "required|file|mimes:jpg,png,webp,jpeg|max:5120",
+            "gallery_photos" => "nullable|array",
+            "gallery_photos.*" => "file|mimes:jpg,png,webp,jpeg|max:5120",
+
             "status" => "required|in:draft,active,inactive,out_of_stock",
             "is_featured" => "nullable|in:0,1",
             "is_trending" => "nullable|in:0,1",
             "is_bestseller" => "nullable|in:0,1",
             "manage_stock" => "nullable|in:0,1",
+
             "weight" => "nullable|numeric|min:0",
             "vat_tax" => "nullable|numeric|min:0",
-            "meta_title" => "nullable",
-            "meta_description" => "nullable",
-            "meta_keywords" => "nullable",
-            "gallery_photos"   => "nullable|array",
-            "gallery_photos.*" => "file|mimes:jpg,png,webp,jpeg|max:2048"
+
+            "meta_title" => "nullable|string|max:255",
+            "meta_description" => "nullable|string|max:500",
+            "meta_keywords" => "nullable|string|max:255",
         ];
     }
+
+    /**
+     * Validation rules for updating a product
+     */
     public function updateProduct(): array
     {
+        $productId = $this->route('product');
+
         return [
-            "title" => "sometimes",
-            "sku" => "sometimes|unique:products,sku," . $this->route('product') . ",id",
-            "slug" => "sometimes|unique:products,slug," . $this->route('product') . ",id",
-            "description" => "sometimes",
+            "title" => "sometimes|string|max:255",
+            "sku" => "sometimes|string|unique:products,sku," . $productId . ",id",
+            "slug" => "sometimes|string|unique:products,slug," . $productId . ",id",
+            "description" => "sometimes|string",
+
             "vendor_id" => "nullable|exists:vendors,id",
             "admin_id" => "nullable|exists:admins,id",
+
             "category_id" => "sometimes|exists:categories,id",
             "sub_category_id" => "sometimes|exists:sub_categories,id",
             "brand_id" => "sometimes|exists:brands,id",
-            "color_id" => "sometimes|exists:colors,id",
-            "size_id" => "sometimes|exists:sizes,id",
+
+            "colors" => "sometimes|array",
+            "colors.*" => "exists:colors,id",
+
+            "sizes" => "sometimes|array",
+            "sizes.*" => "exists:sizes,id",
+
             "unit_id" => "sometimes|exists:units,id",
+
             "price" => "sometimes|numeric|min:0",
             "cost_price" => "sometimes|numeric|min:0",
-            "discount_price" => "sometimes|numeric|min:0",
-            "discount_percentage" => "sometimes|numeric|min:0|max:100",
-            "low_stock_threshold" => "sometimes|numeric|min:0",
-            "sold_count" => "nullable",
-            "view_count" => "nullable",
+            "discount_price" => "nullable|numeric|min:0",
+            "discount_percentage" => "nullable|numeric|min:0|max:100",
+
             "quantity" => "sometimes|numeric|min:0",
+            "low_stock_threshold" => "sometimes|numeric|min:0",
+            "sold_count" => "nullable|numeric|min:0",
+            "view_count" => "nullable|numeric|min:0",
+
             "thumbnail" => "sometimes|file|mimes:jpg,png,webp,jpeg|max:2048",
+            "gallery_photos" => "nullable|array",
+            "gallery_photos.*" => "file|mimes:jpg,png,webp,jpeg|max:2048",
+
             "status" => "sometimes|in:draft,active,inactive,out_of_stock",
             "is_featured" => "nullable|in:0,1",
             "is_trending" => "nullable|in:0,1",
             "is_bestseller" => "nullable|in:0,1",
             "manage_stock" => "nullable|in:0,1",
+
             "weight" => "nullable|numeric|min:0",
             "vat_tax" => "nullable|numeric|min:0",
-            "meta_title" => "nullable",
-            "meta_description" => "nullable",
-            "meta_keywords" => "nullable",
-            "gallery_photos"   => "nullable|array",
-            "gallery_photos.*" => "file|mimes:jpg,png,webp,jpeg|max:2048"
 
+            "meta_title" => "nullable|string|max:255",
+            "meta_description" => "nullable|string|max:500",
+            "meta_keywords" => "nullable|string|max:255",
         ];
     }
 }

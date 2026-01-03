@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 class AdminController extends Controller
 {
     public const PAGE_KEY = "Admin";
+    public const MSG_REG = self::PAGE_KEY . Messages::MSG_REG_SUCCESS;
     public const MSG_LOGIN = self::PAGE_KEY . Messages::MSG_LOGIN_SUCCESS;
     public const MSG_LOGOUT = self::PAGE_KEY . Messages::MSG_LOGOUT_SUCCESS;
     public const MSG_UPDATE = self::PAGE_KEY . Messages::MSG_UPDATE_SUCCESS;
@@ -20,6 +21,14 @@ class AdminController extends Controller
     private function returnProfileView(): string
     {
         return "admin.profile";
+    }
+    private function returnAdminRoutes()
+    {
+        return [
+            "register" => "admin.register",
+            "login" => "admin.login",
+            "dashboard" => "admin.dashboard",
+        ];
     }
 
     protected $service;
@@ -29,21 +38,42 @@ class AdminController extends Controller
         $this->service = new BaseAuthService(Admin::class, $appUtils);
     }
 
+    private function prepareData($request): array
+    {
+        $validatedData = $request->validated();
+        $validatedData['ip'] = $request->ip();
+        $data = [
+            ...$validatedData,
+            'role_id' => self::CURRENT_ROLE,
+        ];
+
+        return $data;
+    }
+    public function register(AdminRequest $request): RedirectResponse
+    {
+        $route = $this->returnAdminRoutes();
+        return parent::handleOperation(function () use ($request) {
+            $validatedData = $this->prepareData($request);
+            $this->service->register($validatedData);
+        }, self::MSG_REG, false, $route['login']);
+    }
     public function update(int|string $vendor, AdminRequest $request): RedirectResponse
     {
+        $route = $this->returnAdminRoutes();
         return parent::handleOperation(function () use ($vendor, $request) {
             $validatedData = $request->validated();
             parent::updateResource($vendor, $validatedData);
-        }, self::MSG_UPDATE);
+        }, self::MSG_UPDATE, false, $route['dashboard']);
     }
 
     public function login(AdminRequest $request)
     {
-        return parent::executeWithTryCatch(function () use ($request): View {
+        return parent::executeWithTryCatch(function () use ($request) {
             $data = $request->validated();
-            $view = $this->returnProfileView();
-            $this->service->login($data);
-            return $this->successView($view);
+
+            $route = $this->returnAdminRoutes();
+            $this->service->login($data,'admin');
+            return redirect()->route($route['dashboard'])->with('success', self::MSG_LOGIN);
         });
     }
 
@@ -62,7 +92,9 @@ class AdminController extends Controller
     {
         return parent::executeWithTryCatch(function (): RedirectResponse {
             $this->service->logout();
-            return $this->successRedirect(self::MSG_LOGOUT);
+            $route = $this->returnAdminRoutes();
+            return redirect()->route($route['login'])->with('success', self::MSG_LOGOUT);
+
         });
     }
 }
