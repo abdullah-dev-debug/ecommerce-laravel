@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CustomerAddress extends BaseModel
 {
+    use SoftDeletes;
     protected $table = 'customer_addresses';
     protected $fillable = [
         'customer_id',

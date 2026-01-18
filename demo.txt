@@ -1,6 +1,22 @@
 load_dataTable_fn = Load Data table
 delete-confirm-btn = sweet Alert
 
+
+@extends("admin.layout.app")
+
+@php
+    $title = "";
+@endphp
+
+@section('title', $title)
+
+
+@section('scripts')
+    @include('admin.partial._scripts')
+@endsection
+
+
+
 <a href="{{ route('admin.products.show', $product->id) }}" class="bs-btn bs-btn-sm bs-btn-info"
                                     title="View">
                                     <i class="fa fa-eye"></i>

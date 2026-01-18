@@ -5,14 +5,10 @@
         document.addEventListener("DOMContentLoaded", init);
 
         function init() {
-            updateHeader();
             generateSku();
         }
 
-        function updateHeader() {
-            const header = document.querySelector("#header-title");
-            if (header) header.innerHTML = "{{ $title }}";
-        }
+     
 
         function generateSku() {
             document.querySelectorAll('.generate-sku-btn').forEach(btn => {

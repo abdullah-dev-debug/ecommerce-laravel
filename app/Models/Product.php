@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\ProductStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -44,6 +45,42 @@ class Product extends BaseModel
     ];
 
     public $timestamps = true;
+
+    public function scopeCustomerVisible($q)
+    {
+        return $q->where('status', ProductStatus::APPROVED)
+            ->where('quantity', '>', 0);
+    }
+    public function scopeForVendor($query, int $vendorId)
+    {
+        return $query->where('vendor_id', $vendorId);
+    }
+    
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('quantity', '<=', 'low_stock_threshold');
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', 1);
+    }
+
+    public function scopeTrending($query)
+    {
+        return $query->where('is_trending', 1);
+    }
+
+    public function scopeBestSeller($query)
+    {
+        return $query->where('is_bestseller', 1);
+    }
+
+
+
+    /**
+     * Relations is given
+     */
 
     public function vendor(): BelongsTo
     {

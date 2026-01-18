@@ -6,7 +6,7 @@
                 <path fill="#0a0c0f" d="M3 18v-2h18v2zm0-5v-2h18v2zm0-5V6h18v2z" />
             </svg>
         </a>
-        <h2 class="header-title" id="header-title">
+        <h2 class="header-title" id="header-title" data-title="{{ $title }}">
             Ecommerce Dashboard
         </h2>
     </div>

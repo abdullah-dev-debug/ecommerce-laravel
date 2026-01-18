@@ -1,10 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Assets\BrandController;
-use App\Http\Controllers\FeaturedProductController;
-use App\Http\Controllers\ProductManageController;
-use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\VendorProductController;
+use Illuminate\Routing\Route;
 
 require __DIR__ . '/attributes.php';
 
@@ -20,9 +19,8 @@ Route::prefix('catalog')->name('catalog.')->group(function () {
         Route::put('//{brand}/status', [BrandController::class, 'toggleStatus'])->name('status');
     });
 
-    Route::get('/vendor-products', [VendorProductController::class, 'index'])->name('vendor.products');
-    Route::get('/featured-products', [FeaturedProductController::class, 'index'])->name('featured.products');
-    Route::get('/inventory', [ProductManageController::class, 'inventory'])->name('inventory');
+    Route::get('/vendor', [ProductController::class, 'vendorProducts'])->name('vendor');
+    Route::get('/inventory', [ProductController::class, 'inventory'])->name('inventory');
 
     Route::prefix('reviews')->name('reviews.')->group(function () {
         Route::get('/', [ReviewController::class, 'index'])->name('list');

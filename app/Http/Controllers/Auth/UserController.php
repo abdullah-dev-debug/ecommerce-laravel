@@ -88,7 +88,7 @@ class UserController extends Controller
         return parent::executeWithTryCatch(function (): View {
             $view = $this->returnListView();
             $filter = $this->returnUserFilter();
-            $list = $this->model->withCount('orders')->withSum('orders','total_amount')->get();
+            $list = $this->model->withCount('orders')->withSum('orders', 'total_amount')->get();
             return $this->successView($view, ["users" => $list]);
         });
     }
@@ -97,7 +97,7 @@ class UserController extends Controller
     {
         return parent::handleOperation(function () use ($client) {
             parent::deleteResource($client);
-        }, self::MSG_DELETE);
+        }, true, self::MSG_DELETE);
     }
 
 
@@ -106,7 +106,7 @@ class UserController extends Controller
         return parent::handleOperation(function () use ($request) {
             $validatedData = $this->prepareData($request);
             $this->service->register($validatedData);
-        }, self::MSG_REG, false, $this->returnListRoute());
+        }, true, self::MSG_REG, $this->returnListRoute());
     }
 
     public function register(UserRequest $request): RedirectResponse
@@ -114,7 +114,7 @@ class UserController extends Controller
         return parent::handleOperation(function () use ($request) {
             $validatedData = $this->prepareData($request, 0, true);
             $this->service->register($validatedData);
-        }, self::MSG_REG);
+        }, true,self::MSG_REG);
     }
 
     public function update(int|string $client, UserRequest $request): RedirectResponse
@@ -130,7 +130,7 @@ class UserController extends Controller
             }
 
             parent::updateResource($client, $data);
-        }, self::MSG_UPDATE, false, $this->returnListRoute());
+        }, true,self::MSG_UPDATE, $this->returnListRoute());
     }
 
     public function login(UserRequest $request)

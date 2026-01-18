@@ -55,7 +55,7 @@ class OrderRequest extends FormRequest
             "email" => "sometimes|required|email|max:100",
             "phone" => "sometimes|required|string|max:15",
             "address" => "sometimes|required|string|max:255",
-            "country_id" => "sometimes|required|integer|exists:countries,id",
+            "country_id" => "sometimes|required|integer",
             "city" => "sometimes|required|string|max:100",
             "state" => "sometimes|required|string|max:100",
             "pin_code" => "sometimes|required|string|max:10",

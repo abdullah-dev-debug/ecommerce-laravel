@@ -1,10 +1,10 @@
 <?php
 
-
+use App\Http\Controllers\Admin\AdminVendorController;
+use App\Http\Controllers\Admin\CustomerAddressController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AdminController;
 use App\Http\Controllers\Auth\UserController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\OrderController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -26,13 +26,42 @@ Route::prefix('ecommerce/admin')->name('admin.')->group(function () {
     Route::middleware(['authenticate:admin'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
-        Route::prefix('users')->name('user.')->group(function () {
+        Route::prefix('customers')->name('user.')->group(function () {
             Route::get('/',  [UserController::class, 'index'])->name('list');
             Route::get('/create',  [UserController::class, 'create'])->name('create');
             Route::post('/',  [UserController::class, 'store'])->name('store');
             Route::delete('/{client}', [UserController::class, 'destroy'])->name('destroy');
             Route::get('/{client}/edit',  [UserController::class, 'edit'])->name('edit');
             Route::put('/{client}',  [UserController::class, 'update'])->name('update');
+
+
+            Route::prefix('address')->name('address.')->group(function () {
+                Route::get('/',  [CustomerAddressController::class, 'index'])->name('list');
+                Route::get('/create',  [CustomerAddressController::class, 'create'])->name('create');
+                Route::post('/',  [CustomerAddressController::class, 'store'])->name('store');
+                Route::delete('/{address}', [CustomerAddressController::class, 'destroy'])->name('destroy');
+                Route::get('/{address}/edit',  [CustomerAddressController::class, 'edit'])->name('edit');
+                Route::put('/{address}',  [CustomerAddressController::class, 'update'])->name('update');
+            });
+        });
+
+        Route::prefix('vendors')->name('vendor.')->group(function () {
+            Route::get('/', [AdminVendorController::class, 'index'])->name('list');
+            Route::get('/create', [AdminVendorController::class, 'create'])->name('create');
+            Route::get('/pending-approvals', [AdminVendorController::class, 'pending'])->name('pending');
+            Route::post('/create', [AdminVendorController::class, 'store'])->name('store');
+            Route::get('/{vendor}/edit', [AdminVendorController::class, 'edit'])->name('edit');
+            Route::put('/{vendor}/edit', [AdminVendorController::class, 'update'])->name('update');
+            Route::delete('/{vendor}', [AdminVendorController::class, 'destroy'])->name('destroy');
+            Route::get('/{vendor}/view', [AdminVendorController::class, 'show'])->name('view');
+            // Route::get('/{vendor}/products', [VendorController::class, 'products'])->name('products');
+            // Route::get('/{vendor}/orders', [VendorController::class, 'orders'])->name('orders');
+            // Route::get('/{vendor}/earnings', [VendorController::class, 'earnings'])->name('earnings');
+
+            // // Verification
+            // Route::get('/{vendor}/verification', [VendorController::class, 'verification'])->name('verification.view');
+            // Route::post('/{vendor}/verify', [VendorController::class, 'verify'])->name('verify');
+            // Route::post('/{vendor}/reject-verification', [VendorController::class, 'rejectVerification'])->name('verification.reject');
         });
 
         // Coman Module Routes
@@ -41,8 +70,9 @@ Route::prefix('ecommerce/admin')->name('admin.')->group(function () {
         require __DIR__ . '/coman/catalog.php';
         require __DIR__ . '/coman/product.php';
 
-        Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', [OrderController::class, 'index'])->name('list');
-        });
+        // Route::prefix('orders')->name('orders.')->group(function () {
+        //     Route::get('/', [OrderController::class, 'index'])->name('list');
+        // });
+
     });
 });

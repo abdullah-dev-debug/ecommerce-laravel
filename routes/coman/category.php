@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Assets\CategoryController;
+use Illuminate\Routing\Route;
 
 Route::prefix('category')->name('categories.')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('list');

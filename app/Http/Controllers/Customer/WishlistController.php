@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Customer;
 
+use App\Http\Controllers\Controller;
 use App\Models\WishList;
 use App\Utils\AppUtils;
 use Illuminate\Contracts\View\View;
@@ -49,7 +50,6 @@ class WishlistController extends Controller
                 throw new \Exception('Item is already in wishlist.');
             }
             parent::createResource($data);
-
         }, self::MSG_WISHLIST_ADDED);
     }
 
@@ -63,9 +63,8 @@ class WishlistController extends Controller
     private function prepareData(Request $request): array
     {
         return [
-            'customer_id' => auth()->check() ? auth()->user()->id :$request->input('customer_id'),
+            'customer_id' => auth()->check() ? auth()->user()->id : $request->input('customer_id'),
             'product_id' => $request->input('product_id'),
         ];
     }
-
 }

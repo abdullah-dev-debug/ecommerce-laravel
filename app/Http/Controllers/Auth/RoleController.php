@@ -31,21 +31,21 @@ class RoleController extends Controller
         $data = $request->validated();
         return parent::handleOperation(function () use ($data) {
             $this->createResource($data);
-        }, self::MSG_CREATE_SUCCESS);
+        }, true,self::MSG_CREATE_SUCCESS);
     }
     public function update(int|string $role, RoleRequest $request): RedirectResponse
     {
         $data = $request->validated();
         return parent::handleOperation(function () use ($role, $data) {
             $this->updateResource($role, $data);
-        }, self::MSG_UPDATE_SUCCESS);
+        }, true,self::MSG_UPDATE_SUCCESS);
     }
 
     public function destroy(int|string $role): RedirectResponse
     {
         return parent::handleOperation(function () use ($role) {
             $this->deleteResource($role);
-        }, self::MSG_DELETE_SUCCESS);
+        }, true,self::MSG_DELETE_SUCCESS);
     }
     public function index()
     {

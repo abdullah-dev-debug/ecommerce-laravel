@@ -228,25 +228,29 @@ abstract class Controller
 
     public function handleOperation(
         callable $operation,
-        string $successMessage,
-        $redirectBack = true,
-        string $route = 'index',
-
-    ): RedirectResponse|View {
+        bool $redirect = true,
+        ?string $successMessage = '',
+        ?string $route = 'index'
+    ): mixed {
         DB::beginTransaction();
+
         try {
-            $operation();
+            $result = $operation();
             DB::commit();
-            if ($redirectBack) {
-                return $this->successRedirect($successMessage);
+
+            if ($redirect) {
+                return redirect()
+                    ->route($route)
+                    ->with('success', $successMessage);
             }
-            return redirect()->route($route)->with('success', $successMessage);
+
+            return $result;
         } catch (\Throwable $th) {
             DB::rollBack();
             throw $th;
-            // return $this->throwError($th);
         }
     }
+
 
     public function executeWithTryCatch(callable $operation, string $errorMessage = "Something went wrong!"): mixed
     {

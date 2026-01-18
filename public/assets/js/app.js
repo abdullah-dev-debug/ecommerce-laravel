@@ -34,6 +34,7 @@
         layout1();
         sweetAlert();
         multiSelect();
+        updateHeader();
     }
 
     function isMobile() {
@@ -260,6 +261,12 @@
                 });
             });
         });
+    }
+
+
+    function updateHeader() {
+        const header = document.querySelector("#header-title");
+        if (header) header.textContent = header.dataset.title;
     }
 
 })();

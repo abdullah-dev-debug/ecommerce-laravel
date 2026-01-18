@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Assets\SubCategoryController;
+use Illuminate\Routing\Route;
 
 Route::prefix('sub-category')->name('subcategories.')->group(function () {
     Route::get('/', [SubCategoryController::class, 'index'])->name('list');

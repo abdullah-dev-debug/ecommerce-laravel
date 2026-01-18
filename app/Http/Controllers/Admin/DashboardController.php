@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Utils\AppUtils;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +30,7 @@ class DashboardController extends Controller
         });
 
     }
-
+    
     protected function storeAdminInSession($admin)
     {
         if (!$admin)

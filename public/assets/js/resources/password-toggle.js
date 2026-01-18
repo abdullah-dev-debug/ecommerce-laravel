@@ -6,6 +6,7 @@
     function inital() {
         passwordVisibility()
     }
+    
     function passwordVisibility() {
         const btnShowPassword = document.querySelectorAll(".password-eye-btn");
 

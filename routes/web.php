@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\Customer\FeaturedProductController ;
+use App\Http\Controllers\Customer\OrderController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\OrderController;
 
-use App\Http\Controllers\FeaturedProductController;
 
 Route::get('/', [FeaturedProductController::class, 'trending']);
 
@@ -19,3 +19,4 @@ Route::get('/payment/cancel', [OrderController::class, 'stripeCancel'])
 
 
 require __DIR__ . '/admin.php';
+require __DIR__ . '/vendor.php';

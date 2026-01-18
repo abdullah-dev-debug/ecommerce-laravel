@@ -22,9 +22,13 @@ class VendorRequest extends FormRequest
     public function rules(): array
     {
         $routeName = $this->route()->getName();
+        $basePath = "admin.vendor";
         return match ($routeName) {
             "vendor.register" => $this->register(),
             "vendor.login" => $this->login(),
+            "$basePath.store" => $this->register(),
+            "$basePath.update" => $this->updateVendor(),
+            "$basePath.verification" => $this->vendorVerification(),
             default => []
         };
     }
@@ -47,7 +51,30 @@ class VendorRequest extends FormRequest
             "password" => "required|min:8",
             "ip" => "nullable|ip"
 
+        ];
+    }
 
+    public function updateVendor()
+    {
+        return [
+            "name" => "sometimes|min:4",
+            "email" => "sometimes",
+            "password" => "nullable|min:8",
+            "phone" => "sometimes",
+            "address" => "sometimes",
+            "ip" => "nullable|ip",
+            "status" => "sometimes",
+        ];
+    }
+
+    public function vendorVerification()
+    {
+        return [
+            "vendor_id" => "required|exist:vendors,id",
+            "type" => "required|in:link,file",
+            "file" => "required|file|mimes:pdf,docx,csv,jpg,jpeg|max:5048|url",
+            "status" => "in:pending,paid,rejected",
+            "request_at" => "nullable"
         ];
     }
 }

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Customer;
 
+use App\Http\Controllers\Controller;
 use App\Constants\Messages;
 use App\Http\Requests\OrderItemRequest;
 use App\Http\Requests\OrderRequest;

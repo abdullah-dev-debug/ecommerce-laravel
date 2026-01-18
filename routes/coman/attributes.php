@@ -4,6 +4,7 @@ use App\Http\Controllers\Assets\AttributesController;
 use App\Http\Controllers\Assets\ColorController;
 use App\Http\Controllers\Assets\SizeController;
 use App\Http\Controllers\Assets\UnitController;
+use Illuminate\Routing\Route;
 
 Route::prefix('attributes')->name('attributes.')->group(function () {
     Route::get('/', [AttributesController::class, 'index'])->name('list');

@@ -16,10 +16,10 @@
     </a>
     <ul class="submenu">
         <li><a href="{{ route('admin.user.list') }}">All Customers</a></li>
-        <li><a href="#">Address Book</a></li>
+        <li><a href="{{ route('admin.user.address.list') }}">Address Book</a></li>
         <li><a href="#">Customer Reviews</a></li>
         <!-- Customer Groups future featured -->
-        <!-- <li><a href="#">Customer Groups</a></li> --> 
+        <!-- <li><a href="#">Customer Groups</a></li> -->
     </ul>
 </li>
 
@@ -33,8 +33,8 @@
         <iconify-icon icon="ic:sharp-keyboard-arrow-down" class="chervon-arrow-down"></iconify-icon>
     </a>
     <ul class="submenu">
-        <li><a href="#">All Vendors</a></li>
-        <li><a href="#">Pending Approvals</a></li>
+        <li><a href="{{ route('admin.vendor.list') }}">All Vendors</a></li>
+        <li><a href="{{ route('admin.vendor.pending') }}">Pending Approvals</a></li>
         <li><a href="#">Vendor Packages</a></li>
         <li><a href="#">Commission Settings</a></li>
         <li><a href="#">Vendor Payouts</a></li>

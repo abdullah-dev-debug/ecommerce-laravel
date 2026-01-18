@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
+
 use App\Constants\Messages;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminRequest;
@@ -55,7 +56,7 @@ class AdminController extends Controller
         return parent::handleOperation(function () use ($request) {
             $validatedData = $this->prepareData($request);
             $this->service->register($validatedData);
-        }, self::MSG_REG, false, $route['login']);
+        }, true, self::MSG_REG,  $route['login']);
     }
     public function update(int|string $vendor, AdminRequest $request): RedirectResponse
     {
@@ -63,7 +64,7 @@ class AdminController extends Controller
         return parent::handleOperation(function () use ($vendor, $request) {
             $validatedData = $request->validated();
             parent::updateResource($vendor, $validatedData);
-        }, self::MSG_UPDATE, false, $route['dashboard']);
+        }, true, self::MSG_UPDATE, $route['dashboard']);
     }
 
     public function login(AdminRequest $request)
@@ -72,7 +73,7 @@ class AdminController extends Controller
             $data = $request->validated();
 
             $route = $this->returnAdminRoutes();
-            $this->service->login($data,'admin');
+            $this->service->login($data, 'admin');
             return redirect()->route($route['dashboard'])->with('success', self::MSG_LOGIN);
         });
     }
@@ -94,7 +95,6 @@ class AdminController extends Controller
             $this->service->logout();
             $route = $this->returnAdminRoutes();
             return redirect()->route($route['login'])->with('success', self::MSG_LOGOUT);
-
         });
     }
 }
